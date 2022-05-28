@@ -8,7 +8,7 @@ a python utility to subset multisequence file based on identifiers from external
 usage: SubsetSeq [-h] -i INPUT -s SEARCH -t TYPE [-m MATCH] [-u UNMATCH]
                  [-f INPUT_FORMAT] [-F OUTPUT_FORMAT] [-v Y/y or N/n] [-V]
 
-Subset multifasta based on identifiers from text file
+Subset multisequence based on identifiers from text file
 
 Citation: Singh, Abhijeet. SubsetSeq: a python utility to multisequence file based on 
 identifiers from external text file. ResearchGate 2022, http://dx.doi.org/10.13140/RG.2.2.34956.59528, 
