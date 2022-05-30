@@ -3,12 +3,12 @@
 
 ###################################
 # script:       SubsetSeq.py
-# date:         Mon May 30 13:42:56 CEST 2022
+# date:         Mon May 30 15:13:10 CEST 2022
 # author:       Abhijeet Singh
 
 ###################################
 #
-version = ': version (1.0)'
+version = ': version (1.1)'
 program = 'SubsetSeq'
 citation = '''\n\nCitation: Singh, Abhijeet. SubsetSeq: a python utility to multisequence file based on 
 identifiers from external text file. ResearchGate 2022, http://dx.doi.org/10.13140/RG.2.2.34956.59528, 
@@ -161,36 +161,33 @@ print("-"*80)
 ##############################################################
 #
 print("# [Indexing input file]")
-with ProcessPoolExecutor() as executor:
-    record = SeqIO.index(filenames(input_file)[0], INformat)
-    for key, value in record.items():
-        if search_var == "1":
-            task = fasta_list.append(value.id)
-        elif search_var == "2":
-            task = fasta_list.append(value.description)
-        executor.submit(task)
+#
+record = SeqIO.index(filenames(input_file)[0], INformat)
+for key, value in record.items():
+    if search_var == "1":
+        fasta_list.append(value.id)
+    elif search_var == "2":
+        fasta_list.append(value.description)
 
 # ##############################################################
 #
 print("# [Preparing matching index]")
-with ProcessPoolExecutor() as executor:
-    with open(identifier_fileabs,"r") as header_file:
-        for header in header_file.readlines():
-            header = header.replace(">","").strip()
-            executor.submit(header)
-            task = match_list.append(header)
-            executor.submit(task)
+
+with open(identifier_fileabs,"r") as header_file:
+    for header in header_file.readlines():
+        header = header.replace(">","").strip()
+        match_list.append(header)
 
 # ##############################################################
 #
 print("# [Preparing unmatching index]")
-with ProcessPoolExecutor() as executor:
-    unmatch_list = [unmatch for unmatch in fasta_list if unmatch not in match_list]
-    executor.submit(unmatch_list)
+unmatch_list = [unmatch for unmatch in fasta_list if unmatch not in match_list]
+
 #
 print("-"*80)
 
 ##############################################################
+
 #
 def def_matching():
     if verbosity == "YES":
@@ -202,6 +199,7 @@ def def_matching():
             elif search_var == "2":
                 DESCRIPTION = value.description
             executor.submit(DESCRIPTION)
+            #
             for header in match_list:
                 if DESCRIPTION == header:
                     Id = value.id
@@ -213,14 +211,11 @@ def def_matching():
                     if OUTformat == 'tab':
                         Id = Id + ' ' + Description
                     matching_sequences = (SeqRecord(Seq(str(Sequence)), id=Id, name=Name, description=Description))
-                    executor.submit(matching_sequences)
-                    task = match_out_list.append(matching_sequences)
-                    executor.submit(task)
+                    match_out_list.append(matching_sequences)
         if verbosity == "YES":
             print("-"*80)
         #
-        task = SeqIO.write(match_out_list, matchout, OUTformat)
-        executor.submit(task)
+        SeqIO.write(match_out_list, matchout, OUTformat)
 
 ##############################################################
 #
@@ -234,6 +229,7 @@ def def_unmatching():
             elif search_var == "2":
                 DESCRIPTION = value.description
             executor.submit(DESCRIPTION)
+            #
             for header in unmatch_list:
                 if DESCRIPTION == header:
                     Id = value.id
@@ -249,8 +245,8 @@ def def_unmatching():
         if verbosity == "YES":    
             print("-"*80)
         #
-        task = SeqIO.write(unmatch_out_list, unmatchout, OUTformat)
-        executor.submit(task)
+        SeqIO.write(unmatch_out_list, unmatchout, OUTformat)
+        
 
 ##############################################################
 #
