@@ -3,7 +3,7 @@
 
 ###################################
 # script:       SubsetSeq.py
-# date:         Mon May 30 15:13:10 CEST 2022
+# date:         Mon May 30 15:47:52 CEST 2022
 # author:       Abhijeet Singh
 
 ###################################
@@ -29,7 +29,6 @@ import sys
 import datetime
 import argparse
 import subprocess
-from concurrent.futures import ProcessPoolExecutor
 #
 try:
     from Bio import SeqIO
@@ -51,6 +50,7 @@ required = parser.add_argument_group('required arguments')
 required.add_argument("-i", "--input", dest='input', required=True, type=str, help = L1 + ' input file\n\n')
 required.add_argument("-s", "--search", dest='search', required=True, type=str, help = L1 + ' text file with identifiers to query input file\n\n')
 required.add_argument("-t", "--type", dest='type', required=True, type=str, help= '\n' + L1 + ' identifier type to match in input file' + L2 + ' 1 = id (sequence identifier before first empty character)' + L2 + ' 2 = description (complete description of sequence according to input file)\n\n')
+#
 optional.add_argument("-m", "--match_out", dest='match', required=False, type=str, help = L1 + ' output file with matched sequences (default: <time>-MATCH_<input_file>)\n\n')
 optional.add_argument("-u", "--unmatch_out", dest='unmatch', required=False, type=str, help = L1 + ' output file with unmatched sequences (default: <time>-UNMATCH_<input_file>)\n\n')
 optional.add_argument("-f", "--input_format", dest='input_format', required=False, default='1', type=int, help = L1 + ' format of input file (default: 1 (fasta))' + L2 + ' 1 = fasta' + L2 + ' 2 = genbank\n\n')
@@ -161,7 +161,6 @@ print("-"*80)
 ##############################################################
 #
 print("# [Indexing input file]")
-#
 record = SeqIO.index(filenames(input_file)[0], INformat)
 for key, value in record.items():
     if search_var == "1":
@@ -172,7 +171,6 @@ for key, value in record.items():
 # ##############################################################
 #
 print("# [Preparing matching index]")
-
 with open(identifier_fileabs,"r") as header_file:
     for header in header_file.readlines():
         header = header.replace(">","").strip()
@@ -182,7 +180,6 @@ with open(identifier_fileabs,"r") as header_file:
 #
 print("# [Preparing unmatching index]")
 unmatch_list = [unmatch for unmatch in fasta_list if unmatch not in match_list]
-
 #
 print("-"*80)
 
@@ -192,60 +189,56 @@ print("-"*80)
 def def_matching():
     if verbosity == "YES":
         print(f"{colours.MATCHheader}# MATCHING SEQUENCES{colours.RESTORE}")
-    with ProcessPoolExecutor() as executor:
-        for key, value in record.items():
-            if search_var == "1":
-                DESCRIPTION = value.id
-            elif search_var == "2":
-                DESCRIPTION = value.description
-            executor.submit(DESCRIPTION)
-            #
-            for header in match_list:
-                if DESCRIPTION == header:
-                    Id = value.id
-                    Description = value.description
-                    Name = value.name
-                    Sequence = value.seq
-                    if verbosity == "YES":
-                        print("# [MATCH]",f"{colours.MATCHID}",Id,f"{colours.RESTORE}")
-                    if OUTformat == 'tab':
-                        Id = Id + ' ' + Description
-                    matching_sequences = (SeqRecord(Seq(str(Sequence)), id=Id, name=Name, description=Description))
-                    match_out_list.append(matching_sequences)
-        if verbosity == "YES":
-            print("-"*80)
+    for key, value in record.items():
+        if search_var == "1":
+            DESCRIPTION = value.id
+        elif search_var == "2":
+            DESCRIPTION = value.description
         #
-        SeqIO.write(match_out_list, matchout, OUTformat)
+        for header in match_list:
+            if DESCRIPTION == header:
+                Id = value.id
+                Description = value.description
+                Name = value.name
+                Sequence = value.seq
+                if verbosity == "YES":
+                    print("# [MATCH]",f"{colours.MATCHID}",Id,f"{colours.RESTORE}")
+                if OUTformat == 'tab':
+                    Id = Id + ' ' + Description
+                matching_sequences = (SeqRecord(Seq(str(Sequence)), id=Id, name=Name, description=Description))
+                match_out_list.append(matching_sequences)
+    if verbosity == "YES":
+        print("-"*80)
+    #
+    SeqIO.write(match_out_list, matchout, OUTformat)
 
 ##############################################################
 #
 def def_unmatching():
     if verbosity == "YES":
         print(f"{colours.UNMATCHheader}# UNMATCHING SEQUENCES{colours.RESTORE}")
-    with ProcessPoolExecutor() as executor:
-        for key, value in record.items():
-            if search_var == "1":
-                DESCRIPTION = value.id
-            elif search_var == "2":
-                DESCRIPTION = value.description
-            executor.submit(DESCRIPTION)
-            #
-            for header in unmatch_list:
-                if DESCRIPTION == header:
-                    Id = value.id
-                    Description = value.description
-                    Name = value.name
-                    Sequence = value.seq
-                    if verbosity == "YES":
-                        print("# [UNMATCH]",f"{colours.UNMATCHID}",Id,f"{colours.RESTORE}")
-                    if OUTformat == 'tab':
-                        Id = Id + ' ' + Description
-                    unmatching_sequences = (SeqRecord(Seq(str(Sequence)), id=Id, name=Name, description=Description))
-                    unmatch_out_list.append(unmatching_sequences)
-        if verbosity == "YES":    
-            print("-"*80)
+    for key, value in record.items():
+        if search_var == "1":
+            DESCRIPTION = value.id
+        elif search_var == "2":
+            DESCRIPTION = value.description
         #
-        SeqIO.write(unmatch_out_list, unmatchout, OUTformat)
+        for header in unmatch_list:
+            if DESCRIPTION == header:
+                Id = value.id
+                Description = value.description
+                Name = value.name
+                Sequence = value.seq
+                if verbosity == "YES":
+                    print("# [UNMATCH]",f"{colours.UNMATCHID}",Id,f"{colours.RESTORE}")
+                if OUTformat == 'tab':
+                    Id = Id + ' ' + Description
+                unmatching_sequences = (SeqRecord(Seq(str(Sequence)), id=Id, name=Name, description=Description))
+                unmatch_out_list.append(unmatching_sequences)
+    if verbosity == "YES":    
+        print("-"*80)
+    #
+    SeqIO.write(unmatch_out_list, unmatchout, OUTformat)
         
 
 ##############################################################
